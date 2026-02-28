@@ -502,15 +502,62 @@ static HRESULT WINAPI IcoDecoder_QueryCapability(IWICBitmapDecoder *iface, IStre
     return S_OK;
 }
 
-static HRESULT WINAPI IcoDecoder_Initialize(IWICBitmapDecoder *iface, IStream *pIStream,
-    WICDecodeOptions cacheOptions)
+static HRESULT IcoDecoder_CheckFormat(IStream *pIStream, ICONHEADER *pHeader)
 {
-    IcoDecoder *This = impl_from_IWICBitmapDecoder(iface);
-    LARGE_INTEGER seek;
+   LARGE_INTEGER seek;
     HRESULT hr;
     ULONG bytesread;
     STATSTG statstg;
     unsigned int i;
+
+    TRACE("(%p,%p)\n", pIStream, pHeader);
+
+    seek.QuadPart = 0;
+    hr = IStream_Seek(pIStream, seek, STREAM_SEEK_SET, NULL);
+    if (FAILED(hr))
+        return hr;
+
+    hr = IStream_Read(pIStream, pHeader, sizeof(ICONHEADER), &bytesread);
+    if (FAILED(hr))
+        return hr;
+
+    if (bytesread != sizeof(ICONHEADER))
+        return WINCODEC_ERR_STREAMREAD;
+
+    if (pHeader->idReserved != 0 ||
+        (pHeader->idType != 1 && pHeader->idType != 2) ||
+        pHeader->idCount == 0)
+    {
+        return E_FAIL;
+    }
+
+    hr = IStream_Stat(pIStream, &statstg, STATFLAG_NONAME);
+    if (FAILED(hr))
+    {
+        WARN("Stat() failed, hr %#lx.\n", hr);
+        return hr;
+    }
+
+    for (i = 0; i < pHeader->idCount; i++)
+    {
+        ICONDIRENTRY direntry;
+
+        hr = IStream_Read(pIStream, &direntry, sizeof(direntry), &bytesread);
+        if (FAILED(hr))
+            return hr;
+
+        if (bytesread != sizeof(direntry) || (direntry.dwDIBSize + direntry.dwDIBOffset > statstg.cbSize.QuadPart))
+            return WINCODEC_ERR_BADIMAGE;
+    }
+
+    return S_OK;
+}
+
+static HRESULT WINAPI IcoDecoder_Initialize(IWICBitmapDecoder *iface, IStream *pIStream,
+    WICDecodeOptions cacheOptions)
+{
+    IcoDecoder *This = impl_from_IWICBitmapDecoder(iface);
+    HRESULT hr;
 
     TRACE("(%p,%p,%x)\n", iface, pIStream, cacheOptions);
 
@@ -522,46 +569,8 @@ static HRESULT WINAPI IcoDecoder_Initialize(IWICBitmapDecoder *iface, IStream *p
         goto end;
     }
 
-    seek.QuadPart = 0;
-    hr = IStream_Seek(pIStream, seek, STREAM_SEEK_SET, NULL);
+    hr = IcoDecoder_CheckFormat(pIStream, &This->header);
     if (FAILED(hr)) goto end;
-
-    hr = IStream_Read(pIStream, &This->header, sizeof(ICONHEADER), &bytesread);
-    if (FAILED(hr)) goto end;
-
-    if (bytesread != sizeof(ICONHEADER))
-    {
-        hr = WINCODEC_ERR_STREAMREAD;
-        goto end;
-    }
-
-    if (This->header.idReserved != 0 ||
-        This->header.idType != 1)
-    {
-        hr = E_FAIL;
-        goto end;
-    }
-
-    hr = IStream_Stat(pIStream, &statstg, STATFLAG_NONAME);
-    if (FAILED(hr))
-    {
-        WARN("Stat() failed, hr %#lx.\n", hr);
-        goto end;
-    }
-
-    for (i = 0; i < This->header.idCount; i++)
-    {
-        ICONDIRENTRY direntry;
-
-        hr = IStream_Read(pIStream, &direntry, sizeof(direntry), &bytesread);
-        if (FAILED(hr)) goto end;
-
-        if (bytesread != sizeof(direntry) || (direntry.dwDIBSize + direntry.dwDIBOffset > statstg.cbSize.QuadPart))
-        {
-            hr = WINCODEC_ERR_BADIMAGE;
-            goto end;
-        }
-    }
 
     This->initialized = TRUE;
     This->stream = pIStream;
