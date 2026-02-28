@@ -150,6 +150,11 @@ extern HRESULT TgaDecoder_CreateInstance(REFIID iid, void** ppv);
 extern HRESULT DdsDecoder_CreateInstance(REFIID iid, void** ppv);
 extern HRESULT DdsEncoder_CreateInstance(REFIID iid, void** ppv);
 
+extern HRESULT IcoDecoder_MatchesPattern(IWICBitmapDecoderInfo *iface,
+    IStream *pIStream, BOOL *pfMatches);
+extern HRESULT TgaDecoder_MatchesPattern(IWICBitmapDecoderInfo *iface,
+    IStream *pIStream, BOOL *pfMatches);
+
 extern HRESULT BitmapImpl_Create(UINT uiWidth, UINT uiHeight,
     UINT stride, UINT datasize, void *view, UINT offset,
     REFWICPixelFormatGUID pixelFormat, WICBitmapCreateCacheOption option,

@@ -41,6 +41,17 @@ typedef struct {
     struct wine_rb_entry entry;
 } ComponentInfo;
 
+typedef HRESULT(*matches_pattern_custom)(IWICBitmapDecoderInfo*, IStream*, BOOL*);
+typedef struct {
+    REFCLSID classid;
+    matches_pattern_custom matches_pattern;
+} ClassCustomPatternMatching;
+
+static const ClassCustomPatternMatching wic_custom_pattern_matching[] = {
+    {&CLSID_WICIcoDecoder, IcoDecoder_MatchesPattern},
+    {&CLSID_WineTgaDecoder, TgaDecoder_MatchesPattern},
+    {0}};
+
 static HRESULT ComponentInfo_GetStringValue(HKEY classkey, LPCWSTR value,
     UINT buffer_size, WCHAR *buffer, UINT *actual_size)
 {
@@ -458,6 +469,22 @@ static HRESULT WINAPI BitmapDecoderInfo_MatchesPattern(IWICBitmapDecoderInfo *if
     LARGE_INTEGER seekpos;
 
     TRACE("(%p,%p,%p)\n", iface, pIStream, pfMatches);
+
+    for (i=0; wic_custom_pattern_matching[i].classid; i++)
+    {
+        if (IsEqualCLSID(wic_custom_pattern_matching[i].classid, &This->base.clsid))
+        {
+            if (wic_custom_pattern_matching[i].matches_pattern)
+            {
+                hr = wic_custom_pattern_matching[i].matches_pattern(iface, pIStream, pfMatches);
+                if (hr != S_FALSE) /* do also the normal pattern match */
+                {
+                    return hr;
+                }
+            }
+            break;
+        }
+    }
 
     for (i=0; i < This->pattern_count; i++)
     {

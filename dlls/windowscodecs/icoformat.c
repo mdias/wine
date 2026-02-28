@@ -787,3 +787,23 @@ HRESULT IcoDecoder_CreateInstance(REFIID iid, void** ppv)
 
     return ret;
 }
+
+HRESULT IcoDecoder_MatchesPattern(IWICBitmapDecoderInfo *iface,
+    IStream *pIStream, BOOL *pfMatches)
+{
+    HRESULT hr;
+    ICONHEADER header;
+
+    TRACE("(%p,%p,%p)\n", iface, pIStream, pfMatches);
+
+    hr = IcoDecoder_CheckFormat(pIStream, &header);
+    if (FAILED(hr))
+    {
+        *pfMatches = FALSE;
+        return E_FAIL;
+    }
+
+    *pfMatches = TRUE;
+
+    return S_OK;
+}

@@ -961,3 +961,25 @@ HRESULT TgaDecoder_CreateInstance(REFIID iid, void** ppv)
 
     return ret;
 }
+
+HRESULT TgaDecoder_MatchesPattern(IWICBitmapDecoderInfo *iface,
+    IStream *pIStream, BOOL *pfMatches)
+{
+    HRESULT hr;
+
+    /* .ico and .cur have very similar beginnings of file compared to
+     * .tga, and some old tga files also don't have an easily identifiable
+     * footer; it's easier to identify an icon/cursor from the structure
+     * though, so we check here first if it's actually an icon/cursor.
+     */
+    BOOL matches_ico;
+    hr = IcoDecoder_MatchesPattern(iface, pIStream, &matches_ico);
+    if (hr == S_OK) /* if it's an icon/cursor, it's not a tga */
+    {
+        *pfMatches = !matches_ico;
+        return E_FAIL;
+    }
+
+    return S_FALSE; /* proceed with normal pattern matching */
+}
+
