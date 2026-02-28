@@ -860,6 +860,7 @@ static const GUID *wic_container_guid_from_d3dx_file_format(enum d3dx_image_file
         case D3DX_IMAGE_FILE_FORMAT_TIFF: return &GUID_ContainerFormatTiff;
         case D3DX_IMAGE_FILE_FORMAT_GIF:  return &GUID_ContainerFormatGif;
         case D3DX_IMAGE_FILE_FORMAT_WMP:  return &GUID_ContainerFormatWmp;
+        case D3DX_IMAGE_FILE_FORMAT_ICO:  return &GUID_ContainerFormatIco;
         default:
             assert(0 && "Unexpected file format.");
             return NULL;
@@ -1152,6 +1153,7 @@ static const uint8_t gif_87a_file_signature[] =  { 'G', 'I', 'F', '8', '7', 'a' 
 static const uint8_t gif_89a_file_signature[] =  { 'G', 'I', 'F', '8', '9', 'a' };
 static const uint8_t wmp_v0_file_signature[] =   { 'I', 'I', 0xbc, 0x00 };
 static const uint8_t wmp_v1_file_signature[] =   { 'I', 'I', 0xbc, 0x01 };
+static const uint8_t ico_file_signature[] =      { 0x00, 0x00, 0x01, 0x00 };
 
 /*
  * If none of these match, the file is either DIB, TGA, or something we don't
@@ -1181,6 +1183,7 @@ static const struct d3dx_file_format_signature file_format_signatures[] =
     { gif_89a_file_signature,   sizeof(gif_89a_file_signature),   D3DX_IMAGE_FILE_FORMAT_GIF },
     { wmp_v0_file_signature,    sizeof(wmp_v0_file_signature),    D3DX_IMAGE_FILE_FORMAT_WMP },
     { wmp_v1_file_signature,    sizeof(wmp_v1_file_signature),    D3DX_IMAGE_FILE_FORMAT_WMP },
+    { ico_file_signature,       sizeof(ico_file_signature),       D3DX_IMAGE_FILE_FORMAT_ICO },
 };
 
 static BOOL d3dx_get_image_file_format_from_file_signature(const void *src_data, uint32_t src_data_size,
@@ -1900,6 +1903,7 @@ HRESULT d3dx_image_init(const void *src_data, uint32_t src_data_size, struct d3d
         case D3DX_IMAGE_FILE_FORMAT_BMP:
         case D3DX_IMAGE_FILE_FORMAT_JPG:
         case D3DX_IMAGE_FILE_FORMAT_PNG:
+        case D3DX_IMAGE_FILE_FORMAT_ICO:
             hr = d3dx_initialize_image_from_wic(src_data, src_data_size, image, iff, flags);
             break;
 

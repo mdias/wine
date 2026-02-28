@@ -270,6 +270,7 @@ enum d3dx_image_file_format
     D3DX_IMAGE_FILE_FORMAT_TIFF = 10,
     D3DX_IMAGE_FILE_FORMAT_GIF  = 11,
     D3DX_IMAGE_FILE_FORMAT_WMP  = 12,
+    D3DX_IMAGE_FILE_FORMAT_ICO  = 13,
     /* This is a Wine only file format value. */
     D3DX_IMAGE_FILE_FORMAT_DDS_DXT10 = 100,
     D3DX_IMAGE_FILE_FORMAT_FORCE_DWORD = 0x7fffffff
